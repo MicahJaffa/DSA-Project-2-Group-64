@@ -11,6 +11,19 @@ if(MINGW)
     file(COPY ${mingw_runtime} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 endif()
 
+add_executable(AbsoluteCinema
+        main.cpp
+        Graph.cpp
+        DataFormat.cpp
+        Graph.h
+        DataFormat.h
+        BFS.h
+        BFS.cpp
+)
+
+add_library(cinema_graph graph.cpp DataFormat.cpp)
+target_include_directories(cinema_graph PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+
 add_library(cinema_graph graph.cpp DataFormat.cpp)
 target_include_directories(cinema_graph PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 

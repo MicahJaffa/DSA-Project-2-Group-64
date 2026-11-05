@@ -1,4 +1,13 @@
+#include <iostream>
+#ifdef _WIN32
+#include <windows.h>
+#endif
+#include "Graph.h"
 #include "DataFormat.h"
+#include "BFS.h"
+
+#include "DataFormat.h"
+#include "BFS.h"
 
 #include <iostream>
 #include <stdexcept>
@@ -80,5 +89,8 @@ int main(int argc, char* argv[]) {
         std::cerr << error.what() << '\n';
         return 1;
     }
+    return 0;
+}
+
     return 0;
 }
