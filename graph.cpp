@@ -1,44 +1,115 @@
 #include "graph.h"
-#include <iostream>
-Graph::Graph() {}
-void Graph::insertEdge(const std::string& actor, const std::string& movie)
-{
-    actorToMovies[actor].push_back(movie);
-    movieToActors[movie].push_back(actor);
-}
 
-std::vector<std::string> Graph::getMoviesForActor(const std::string& actor)
-{
-    if (actorToMovies.find(actor) != actorToMovies.end()) {
-        return actorToMovies[actor];
+#include <algorithm>
+#include <queue>
+#include <utility>
+
+void Graph::addMovie(const Movie& movie, const std::vector<std::string>& cast) {
+    const auto filmEntry = movieById.emplace(movie.imdbId, movies.size());
+    if (filmEntry.second) {
+        movies.push_back({movie, {}});
     }
-    return {};
-}
-
-std::vector<std::string> Graph::getActorsInMovie(const std::string& movie)
-{
-    if (movieToActors.find(movie) != movieToActors.end()) {
-        return movieToActors[movie];
+    const auto movieIndex = filmEntry.first->second;
+    auto& members = movies[movieIndex].cast;
+    for (const auto& name : cast) {
+        if (name.empty()) {
+            continue;
+        }
+        const auto actorEntry = actorByName.emplace(name, actors.size());
+        if (actorEntry.second) {
+            actors.push_back({name, {}});
+        }
+        const auto actorIndex = actorEntry.first->second;
+        if (std::find(members.begin(), members.end(), actorIndex) == members.end()) {
+            members.push_back(actorIndex);
+            actors[actorIndex].movies.push_back(movieIndex);
+        }
     }
-    return {};
 }
-void Graph::printTest(int limit) {
-    int count = 0;
-    std::cout << "--- Graph Sample ---" << std::endl;
 
-    for (const auto& pair : actorToMovies) {
-        if (count >= limit) break;
+std::vector<Movie> Graph::getMoviesForActor(const std::string& name) const {
+    std::vector<Movie> result;
+    const auto actor = actorByName.find(name);
+    if (actor != actorByName.end()) {
+        for (auto movie : actors[actor->second].movies) {
+            result.push_back(movies[movie].details);
+        }
+    }
+    return result;
+}
 
-        std::cout << "Actor: " << pair.first << "\nMovies: ";
+std::vector<std::string> Graph::getActorsInMovie(const std::string& imdbId) const {
+    std::vector<std::string> result;
+    const auto film = movieById.find(imdbId);
+    if (film != movieById.end()) {
+        for (auto actor : movies[film->second].cast) {
+            result.push_back(actors[actor].name);
+        }
+    }
+    return result;
+}
 
-        for (size_t i = 0; i < pair.second.size(); ++i) {
-            std::cout << pair.second[i];
-            if (i < pair.second.size() - 1) {
-                std::cout << ", ";
+ConnectionResult Graph::shortestConnection(const std::string& start, const std::string& target) const {
+    const auto startEntry = actorByName.find(start);
+    const auto targetEntry = actorByName.find(target);
+    if (startEntry == actorByName.end()) {
+        const auto status = targetEntry == actorByName.end()
+            ? ConnectionStatus::unknownBoth : ConnectionStatus::unknownStart;
+        return {status, {}};
+    }
+    if (targetEntry == actorByName.end()) {
+        return {ConnectionStatus::unknownTarget, {}};
+    }
+    const auto source = startEntry->second;
+    const auto destination = targetEntry->second;
+    if (source == destination) {
+        return {ConnectionStatus::found, {}};
+    }
+
+    struct Predecessor {
+        std::size_t actor;
+        std::size_t movie;
+    };
+    const auto unseen = actors.size();
+    std::vector<Predecessor> previous(actors.size(), {unseen, movies.size()});
+    std::vector<bool> expandedMovie(movies.size(), false);
+    std::queue<std::size_t> pending;
+    previous[source].actor = source;
+    pending.push(source);
+
+    while (!pending.empty() && previous[destination].actor == unseen) {
+        const auto current = pending.front();
+        pending.pop();
+        for (auto movie : actors[current].movies) {
+            if (expandedMovie[movie]) {
+                continue;
+            }
+            expandedMovie[movie] = true;
+            for (auto costar : movies[movie].cast) {
+                if (previous[costar].actor == unseen) {
+                    previous[costar] = {current, movie};
+                    pending.push(costar);
+                }
             }
         }
-        std::cout << "\n\n";
-        count++;
     }
-    std::cout << "--------------------" << std::endl;
+    if (previous[destination].actor == unseen) {
+        return {ConnectionStatus::disconnected, {}};
+    }
+
+    std::vector<ConnectionStep> steps;
+    for (auto actor = destination; actor != source; actor = previous[actor].actor) {
+        const auto& link = previous[actor];
+        steps.push_back({actors[link.actor].name, movies[link.movie].details, actors[actor].name});
+    }
+    std::reverse(steps.begin(), steps.end());
+    return {ConnectionStatus::found, std::move(steps)};
+}
+
+std::size_t Graph::actorCount() const {
+    return actors.size();
+}
+
+std::size_t Graph::movieCount() const {
+    return movies.size();
 }

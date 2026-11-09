@@ -1,0 +1,7 @@
+title,actors,year,imdb_title_id,description
+Movie 1,"  A, B, B, , ",1990,tt1,First movie
+"Movie ""Two"", Part 2","B, C",1991,tt2,"Description on
+two lines"
+Movie 1,"D, E",2000,tt3,Remake with a separate cast
+Movie 1,A,1990,tt1,Repeated credit
+Empty Cast,,2001,tt4,

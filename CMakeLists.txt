@@ -5,6 +5,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if(MINGW)
+    get_filename_component(mingw_bin "${CMAKE_CXX_COMPILER}" DIRECTORY)
+    file(GLOB mingw_runtime "${mingw_bin}/libgcc_s_*-1.dll" "${mingw_bin}/libstdc++-6.dll" "${mingw_bin}/libwinpthread-1.dll")
+    file(COPY ${mingw_runtime} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+endif()
+
 add_library(cinema_graph
         graph.cpp
         DataFormat.cpp
