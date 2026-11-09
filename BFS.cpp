@@ -13,7 +13,7 @@ vector<string> BFS(Graph& graph, const string& startActor, const string& targetA
         return {};
     }
     if (startActor == targetActor) {
-        return {startActor};
+        return { startActor };
     }
 
     queue<string> actorsToVisit;
@@ -27,15 +27,15 @@ vector<string> BFS(Graph& graph, const string& startActor, const string& targetA
     while (!actorsToVisit.empty()) {
         string currentActor = actorsToVisit.front();
         actorsToVisit.pop();
-        for (const string& movie : graph.getMoviesForActor(currentActor)) {
-            if (!visitedMovies.insert(movie).second) {
+        for (const Movie& movie : graph.getMoviesForActor(currentActor)) {
+            if (!visitedMovies.insert(movie.imdbId).second) {
                 continue;
             }
-            for (const string& coStar : graph.getActorsInMovie(movie)) {
+            for (const string& coStar : graph.getActorsInMovie(movie.imdbId)) {
                 if (!visitedActors.insert(coStar).second) {
                     continue;
                 }
-                previous[coStar] = {currentActor, movie};
+                previous[coStar] = { currentActor, movie.title };
                 if (coStar == targetActor) {
                     vector<string> path;
                     string actor = targetActor;
@@ -61,7 +61,7 @@ void printBFSPath(const vector<string>& path) {
         return;
     }
     cout << "Shortest connection (" << (path.size() - 1) / 2
-         << " movie connections):" << endl;
+        << " movie connections):" << endl;
     for (const string& name : path) {
         cout << name << endl;
     }
